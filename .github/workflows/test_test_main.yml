@@ -1,0 +1,43 @@
+name: Kestra CI/CD
+on: [push]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Kestra validate
+    steps:
+      - name: Checkout repo content
+        uses: actions/checkout@v4
+
+      - name: Validate all flows on server-side
+        uses: kestra-io/validate-action@develop
+        with:
+          directory: ./kestra/flows
+          resource: flow
+          server: server_url
+
+  # If validation passed, deploy resources
+  deploy:
+    runs-on: ubuntu-latest
+    name: Kestra deploy
+    steps:
+      # We can only deploy to one namespace at once,
+      # so we have two different steps for our two namespaces product and engineering
+      - name: Checkout repo content
+        uses: actions/checkout@v4
+
+      - name: Deploy product flows
+        uses: kestra-io/deploy-action@master
+        with:
+          namespace: product
+          directory: ./kestra/flows/product
+          resource: flow
+          server: server_url
+
+      - name: Deploy engineering flows
+        uses: kestra-io/deploy-action@master
+        with:
+          namespace: engineering
+          directory: ./kestra/flows/engineering
+          resource: flow
+          server: server_url
